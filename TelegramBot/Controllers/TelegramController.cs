@@ -7,7 +7,7 @@ namespace TelegramBot.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class TelegramController(TelegramService telegramService, IOptions<BotConfiguration> Config, ITelegramBotClient bot, UpdateHandler handleUpdateService) : ControllerBase
+public class TelegramController(IOptions<BotConfiguration> Config, ITelegramBotClient bot) : ControllerBase
 {
     [HttpGet("webhookInfo")]
     public async Task<JsonResult> GetInfo()
@@ -26,7 +26,7 @@ public class TelegramController(TelegramService telegramService, IOptions<BotCon
     }
 
     [HttpPost]
-    public async Task<IActionResult> Post([FromBody] Update update, CancellationToken ct)
+    public async Task<IActionResult> Post([FromBody] Update update, [FromServices] UpdateHandler handleUpdateService, CancellationToken ct)
     {
         if (Request.Headers["X-Telegram-Bot-Api-Secret-Token"] != Config.Value.SecretToken)
             return Forbid();
@@ -40,13 +40,4 @@ public class TelegramController(TelegramService telegramService, IOptions<BotCon
         }
         return Ok();
     }
-
-    //[Authorize]
-    //[HttpPost("set-configuration")]
-    //public async Task<IActionResult> SetConfiguration([FromBody] string config)
-    //{
-    //    var userId = long.Parse(User.Identity.Name);
-    //    await telegramService.SaveConfigurationAsync(userId, config);
-    //    return Ok("Configuration saved successfully!");
-    //}
 }

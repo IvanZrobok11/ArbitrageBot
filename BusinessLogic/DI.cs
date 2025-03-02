@@ -11,7 +11,6 @@ public static class ServiceCollectionExtensions
     {
         services.AddImplementationsByBase<ICryptoExchangeApiService>(ServiceLifetime.Scoped);
         services.AddScoped<CommonExchangeService>();
-        services.AddScoped<JwtService>();
     }
 
     public static void AddImplementationsByBase<TService>(this IServiceCollection services, ServiceLifetime lifetime)

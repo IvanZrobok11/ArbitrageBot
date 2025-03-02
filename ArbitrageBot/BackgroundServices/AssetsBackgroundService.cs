@@ -13,7 +13,6 @@ public class AssetsBackgroundService(
     ILogger<BaseBackgroundService> logger) : BaseBackgroundService(services, logger)
 {
     protected override TimeSpan TimerPeriod => options.Value.AssetsBackgroundService;
-    //protected override TimeSpan TimerPeriod => TimeSpan.FromSeconds(30);
 
     protected override async Task DoWorkAsync(IServiceScope scope, CancellationToken cancellationToken)
     {
@@ -36,6 +35,7 @@ public class AssetsBackgroundService(
                 if (stats.USDTProfit < user.ExceptedProfit) continue;
 
                 var json = JsonSerializer.Serialize(assetsPair, new JsonSerializerOptions { WriteIndented = true });
+                Console.WriteLine($"Pair was found: {json}");
                 await telegramBotClient.SendMessage(user.TelegramUserId, json, cancellationToken: cancellationToken);
             }
         }

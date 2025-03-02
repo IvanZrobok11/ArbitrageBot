@@ -1,9 +1,4 @@
-﻿using DAL;
-using DAL.Models;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using System.Diagnostics.CodeAnalysis;
-using System.Text.Json;
+﻿using Microsoft.Extensions.Logging;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
@@ -14,7 +9,7 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace TelegramBot;
 
-public class UpdateHandler(ITelegramBotClient bot, ILogger<UpdateHandler> logger, AppDbContext appDbContext) : IUpdateHandler
+public class UpdateHandler(ITelegramBotClient bot, ILogger<UpdateHandler> logger, TelegramService telegramService) : IUpdateHandler
 {
     private static readonly InputPollOption[] PollOptions = ["Hello", "World!"];
 
@@ -45,19 +40,7 @@ public class UpdateHandler(ITelegramBotClient bot, ILogger<UpdateHandler> logger
             _ => UnknownUpdateHandlerAsync(update)
         });
     }
-    static bool IsValidJson(string input, [MaybeNullWhen(false)] out UserConfigurationDTO result)
-    {
-        result = null;
-        try
-        {
-            result = JsonSerializer.Deserialize<UserConfigurationDTO>(input);
-            return result is not null;
-        }
-        catch
-        {
-            return false;
-        }
-    }
+
     public record UserConfigurationDTO(
         int Budget,
         byte MinChanceToBuy,
@@ -67,22 +50,14 @@ public class UpdateHandler(ITelegramBotClient bot, ILogger<UpdateHandler> logger
 
     private async Task OnMessage(Message msg)
     {
-        if (IsValidJson(msg.Text, out var userConfigurationDTO))
+        if (msg.From is not null)
         {
-            var user = await appDbContext.UserConfigurations.FirstOrDefaultAsync(u => u.TelegramUserId == msg.From.Id);
-            if (user is null)
+            var successUpdate = await telegramService.TryUpdateConfigAsync(msg.From.Id, msg.Text ?? "", CancellationToken.None);
+            if (successUpdate)
             {
-                appDbContext.UserConfigurations.Add(new UserConfiguration(msg.From.Id, userConfigurationDTO.Budget, userConfigurationDTO.MinChanceToBuy, userConfigurationDTO.MinChangeToSell, userConfigurationDTO.ExceptedProfit));
+                await bot.SendMessage(msg.Chat, "Changes was saved");
+                return;
             }
-            else
-            {
-                user.Budget = userConfigurationDTO.Budget;
-                user.MinChanceToBuy = userConfigurationDTO.MinChanceToBuy;
-                user.MinChangeToSell = userConfigurationDTO.MinChangeToSell;
-                user.ExceptedProfit = userConfigurationDTO.ExceptedProfit;
-                appDbContext.UserConfigurations.Update(user);
-            }
-            await appDbContext.SaveChangesAsync();
         }
 
         logger.LogInformation("Receive message type: {MessageType}", msg.Type);

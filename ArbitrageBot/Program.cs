@@ -1,22 +1,27 @@
-﻿using BusinessLogic;
+﻿using ArbitrageBot.BackgroundServices;
+using BusinessLogic;
+using BusinessLogic.HttpClientPolicy;
 using BusinessLogic.Models;
+using DAL;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Versioning;
+using Microsoft.EntityFrameworkCore;
+using TelegramBot.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//builder.Services.AddDAL(builder.Configuration);
+builder.Services.AddDAL(builder.Configuration);
 
-//builder.Services.AddHostedService<AssetsBackgroundService>();
-//builder.Services.Configure<BackgroundServicesOption>(builder.Configuration.GetSection(BackgroundServicesOption.SectionKey));
+builder.Services.AddHostedService<AssetsBackgroundService>();
+builder.Services.Configure<BackgroundServicesOption>(builder.Configuration.GetSection(BackgroundServicesOption.SectionKey));
 
 builder.Services.Configure<CryptoAPISettings>(builder.Configuration.GetSection(CryptoAPISettings.SectionKey));
 
 builder.Services.AddControllers()
-    //.AddTelegramBotControllers()
+    .AddTelegramBotControllers()
     .AddJsonOptions((option) => option.JsonSerializerOptions.WriteIndented = true);
 
-//builder.Services.AddTelegramBot(builder.Configuration);
+builder.Services.AddTelegramBot(builder.Configuration).AddHttpClientPolicy(builder.Configuration);
 builder.Services.AddCryptoApiServices();
 
 builder.Services.AddApiVersioning(options =>
@@ -38,11 +43,11 @@ builder.Services.AddApiVersioning(options =>
 
 var app = builder.Build();
 
-//using (var scope = app.Services.CreateScope())
-//{
-//    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-//    dbContext.Database.Migrate();
-//}
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    dbContext.Database.Migrate();
+}
 
 if (!app.Environment.IsDevelopment())
 {
