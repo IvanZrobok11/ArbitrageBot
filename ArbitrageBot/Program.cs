@@ -1,17 +1,33 @@
-using BusinessLogic;
+﻿using BusinessLogic;
 using BusinessLogic.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Versioning;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+//builder.Services.AddDAL(builder.Configuration);
 
-builder.Services.Configure<CryptoApiSettings>(builder.Configuration.GetSection("CryptoApi"));
-builder.Services.AddControllers().AddJsonOptions((option) => option.JsonSerializerOptions.WriteIndented = true);
-builder.Services.AddHttpClient();
+//builder.Services.AddHostedService<AssetsBackgroundService>();
+//builder.Services.Configure<BackgroundServicesOption>(builder.Configuration.GetSection(BackgroundServicesOption.SectionKey));
+
+builder.Services.Configure<CryptoAPISettings>(builder.Configuration.GetSection(CryptoAPISettings.SectionKey));
+
+builder.Services.AddControllers()
+    //.AddTelegramBotControllers()
+    .AddJsonOptions((option) => option.JsonSerializerOptions.WriteIndented = true);
+
+//builder.Services.AddTelegramBot(builder.Configuration);
 builder.Services.AddCryptoApiServices();
 
-//var allowedOrigins = builder.Configuration.GetSection("allowedOrigins").Get<string[]>();
+builder.Services.AddApiVersioning(options =>
+{
+    options.ReportApiVersions = true; // Add headers API-version in response
+    options.AssumeDefaultVersionWhenUnspecified = true; // Use default version if not set
+    options.DefaultApiVersion = new ApiVersion(1, 0); // Default version
+    options.ApiVersionReader = new UrlSegmentApiVersionReader(); // Use URL API version reader
+});
 
+//var allowedOrigins = builder.Configuration.GetSection("allowedOrigins").Get<string[]>();
 //builder.Services.AddCors(options =>
 //{
 //    options.AddDefaultPolicy(policy =>
@@ -22,10 +38,24 @@ builder.Services.AddCryptoApiServices();
 
 var app = builder.Build();
 
+//using (var scope = app.Services.CreateScope())
+//{
+//    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+//    dbContext.Database.Migrate();
+//}
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/error");
+    app.UseHsts();
+}
+
 // Configure the HTTP request pipeline.
 
 app.UseHttpsRedirection();
 //app.UseCors();
+app.UseRouting();
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

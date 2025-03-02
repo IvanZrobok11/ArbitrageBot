@@ -1,4 +1,5 @@
 ﻿using BusinessLogic.Interfaces;
+using BusinessLogic.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 
@@ -9,6 +10,8 @@ public static class ServiceCollectionExtensions
     public static void AddCryptoApiServices(this IServiceCollection services)
     {
         services.AddImplementationsByBase<ICryptoExchangeApiService>(ServiceLifetime.Scoped);
+        services.AddScoped<CommonExchangeService>();
+        services.AddScoped<JwtService>();
     }
 
     public static void AddImplementationsByBase<TService>(this IServiceCollection services, ServiceLifetime lifetime)
