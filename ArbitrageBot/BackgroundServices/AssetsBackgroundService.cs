@@ -1,4 +1,5 @@
-﻿using BusinessLogic.Services;
+﻿using ArbitrageBot.BackgroundServices.Base;
+using BusinessLogic.Services;
 using DAL;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -10,7 +11,7 @@ namespace ArbitrageBot.BackgroundServices;
 public class AssetsBackgroundService(
     IServiceProvider services,
     IOptions<BackgroundServicesOption> options,
-    ILogger<BaseBackgroundService> logger) : BaseBackgroundService(services, logger)
+    ILogger<BaseTimeHostedHealthTrackedBackgroundService> logger) : BaseTimeHostedHealthTrackedBackgroundService(services, logger)
 {
     protected override TimeSpan TimerPeriod => options.Value.AssetsBackgroundService;
 

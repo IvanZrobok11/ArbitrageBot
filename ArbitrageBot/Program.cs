@@ -1,19 +1,30 @@
 ﻿using ArbitrageBot.BackgroundServices;
+using ArbitrageBot.BackgroundServices.Base;
+using ArbitrageBot.Extensions;
 using BusinessLogic;
-using BusinessLogic.HttpClientPolicy;
 using BusinessLogic.Models;
 using DAL;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.EntityFrameworkCore;
-using TelegramBot.Extensions;
+using Serilog;
+using TelegramBot;
 
 var builder = WebApplication.CreateBuilder(args);
+var services = builder.Services;
+var configuration = builder.Configuration;
 
 builder.Services.AddDAL(builder.Configuration);
 
-builder.Services.AddHostedService<AssetsBackgroundService>();
-builder.Services.Configure<BackgroundServicesOption>(builder.Configuration.GetSection(BackgroundServicesOption.SectionKey));
+services.Configure<BackgroundServicesOption>(builder.Configuration.GetSection(BackgroundServicesOption.SectionKey));
+services.AddHealthTrackedBackgroundServices();
+services.AddHostedService<AssetsBackgroundService>();
+
+// Add health checks
+services.AddHealthChecks()
+    .AddSqlite(builder.Configuration.GetConnectionString("DefaultConnection")!, name: "sqlite")
+    .AddBackgroundServicesCheck(name: "background_services", staleExecutionThreshold: TimeSpan.FromMinutes(10))
+    .AddMemoryHealthCheck();
 
 builder.Services.Configure<CryptoAPISettings>(builder.Configuration.GetSection(CryptoAPISettings.SectionKey));
 
@@ -21,7 +32,7 @@ builder.Services.AddControllers()
     .AddTelegramBotControllers()
     .AddJsonOptions((option) => option.JsonSerializerOptions.WriteIndented = true);
 
-builder.Services.AddTelegramBot(builder.Configuration).AddHttpClientPolicy(builder.Configuration);
+builder.Services.AddTelegramBot(builder.Configuration);
 builder.Services.AddCryptoApiServices();
 
 builder.Services.AddApiVersioning(options =>
@@ -41,7 +52,20 @@ builder.Services.AddApiVersioning(options =>
 //    });
 //});
 
+var logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .WriteTo.File("../data/logs/app-log.txt", rollingInterval: RollingInterval.Day)
+    .CreateLogger();
+
+// Registration Serilog like logger provider
+builder.Logging.ClearProviders();
+builder.Logging.AddSerilog(logger);
+
 var app = builder.Build();
+
+var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
+var log = loggerFactory.CreateLogger("ArbitrageBotApp");
+log.LogInformation("Application is running..");
 
 using (var scope = app.Services.CreateScope())
 {
@@ -55,8 +79,9 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-// Configure the HTTP request pipeline.
+app.MapHealthCheckEndpoint();
 
+// Configure the HTTP request pipeline.
 app.UseHttpsRedirection();
 //app.UseCors();
 app.UseRouting();

@@ -63,25 +63,6 @@ public class CommonExchangeService
         }
     }
 
-    //public async IAsyncEnumerable<AssetsPairViewModel> GetSmartAssetPairsAsync(ushort minPercent, ushort maxPercent, bool matchNetworks, [EnumeratorCancellation] CancellationToken cancellationToken)
-    //{
-    //    var diffPriceAssets = GetAssetsPairsAsync(minPercent, maxPercent, matchNetworks, cancellationToken);
-    //    await foreach (var diffPriceAsset in diffPriceAssets)
-    //    {
-    //        var assetToBuy = diffPriceAsset.LowPriceAsset;
-    //        var assetToSell = diffPriceAsset.BigPriceAsset;
-    //        var intersectedNetworks = assetToSell.Networks.Select(n => n.Name).Intersect(assetToBuy.Networks.Select(n => n.Name));
-
-    //        foreach (var networkName in intersectedNetworks)
-    //        {
-    //            var exchangeForBuy = new AssetExchange(assetToBuy.Type, assetToBuy.LastPrice, assetToBuy.Networks.First(x => x.Name == networkName), -1);
-    //            var exchangeForSell = new AssetExchange(assetToSell.Type, assetToSell.LastPrice, assetToSell.Networks.First(x => x.Name == networkName), -1);
-    //            var stats = new AssetStats(exchangeForBuy, exchangeForSell, diffPriceAsset.DiffPricePercent);
-    //            yield return new AssetsPairViewModel(assetToSell.Symbol, exchangeForBuy, exchangeForSell, diffPriceAsset.DiffPricePercent, stats);
-    //        }
-    //    }
-    //}
-
     public async Task<List<AssetsPairViewModel>> GetSmartAssetPairsAsync(ushort minPercent, ushort maxPercent, bool matchNetworks, CancellationToken cancellationToken)
     {
         var diffPriceAssets = await GetAssetsPairsAsync(minPercent, maxPercent, matchNetworks, cancellationToken).ToListAsync(cancellationToken);

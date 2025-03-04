@@ -11,7 +11,7 @@ namespace BusinessLogic.APIServices;
 
 public class ByBitAPIService : BaseCryptoExchange
 {
-    private static BybitRestClient restClient = new BybitRestClient();
+    private static BybitRestClient restClient = new BybitRestClient((o) => o.RequestTimeout = TimeSpan.FromSeconds(10));
     public ByBitAPIService(ILogger<ByBitAPIService> logger, IOptionsSnapshot<CryptoAPISettings> options) : base(logger)
     {
         var apiCredentials = options.Value.ExchangesCredentials[Type];

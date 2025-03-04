@@ -1,10 +1,11 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using BusinessLogic.Models;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Polly;
 using Polly.Extensions.Http;
 using System.Net;
 
-namespace BusinessLogic.HttpClientPolicy;
+namespace BusinessLogic.Extensions;
 
 public static class HttpClientExtension
 {

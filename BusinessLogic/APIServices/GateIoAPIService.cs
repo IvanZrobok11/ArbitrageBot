@@ -10,7 +10,7 @@ namespace BusinessLogic.APIServices;
 
 public class GateIoAPIService : BaseCryptoExchange
 {
-    private static GateIoRestClient _restClient = new GateIoRestClient();
+    private static GateIoRestClient _restClient = new GateIoRestClient((o) => o.RequestTimeout = TimeSpan.FromSeconds(10));
 
     public GateIoAPIService(ILogger<GateIoAPIService> logger, IOptionsSnapshot<CryptoAPISettings> options) : base(logger)
     {

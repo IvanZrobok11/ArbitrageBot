@@ -10,7 +10,7 @@ namespace BusinessLogic.APIServices;
 
 public class KuCoinAPIService : BaseCryptoExchange
 {
-    public static KucoinRestClient restClient = new KucoinRestClient();
+    public static KucoinRestClient restClient = new KucoinRestClient((o) => o.RequestTimeout = TimeSpan.FromSeconds(10));
     public KuCoinAPIService(ILogger<KuCoinAPIService> logger, IOptionsSnapshot<CryptoAPISettings> options) : base(logger)
     {
         // restClient.SetApiCredentials(new Kucoin.Net.Objects.KucoinApiCredentials("", "", ""));

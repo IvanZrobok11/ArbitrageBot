@@ -11,7 +11,7 @@ namespace BusinessLogic.APIServices;
 
 public class MexcAPIClient : BaseCryptoExchange
 {
-    public static MexcRestClient restClient = new MexcRestClient();
+    public static MexcRestClient restClient = new MexcRestClient((o) => o.RequestTimeout = TimeSpan.FromSeconds(10));
     public MexcAPIClient(ILogger<MexcAPIClient> logger, IOptionsSnapshot<CryptoAPISettings> options) : base(logger)
     {
         var apiCredentials = options.Value.ExchangesCredentials[Type];
@@ -44,7 +44,7 @@ public class MexcAPIClient : BaseCryptoExchange
     protected override async Task<(IEnumerable<ISymbolOrderBookEntry> Asks, IEnumerable<ISymbolOrderBookEntry> Bids)> GetAsksBids(string symbol, CancellationToken cancellationToken)
     {
         //limit: default 100, max 5000
-        var response = await restClient.SpotApi.ExchangeData.GetOrderBookAsync(symbol, 5000, cancellationToken);
+        var response = await restClient.SpotApi.ExchangeData.GetOrderBookAsync(symbol, 2000, cancellationToken);
         response.ShouldSuccess();
         return (response.Data.Asks, response.Data.Bids);
     }

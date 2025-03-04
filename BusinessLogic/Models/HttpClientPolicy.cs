@@ -1,4 +1,4 @@
-﻿namespace BusinessLogic.HttpClientPolicy;
+﻿namespace BusinessLogic.Models;
 
 public class HttpClientPolicy
 {

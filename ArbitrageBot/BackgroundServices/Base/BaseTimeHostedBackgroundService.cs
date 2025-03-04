@@ -1,6 +1,6 @@
-﻿namespace ArbitrageBot.BackgroundServices;
+﻿namespace ArbitrageBot.BackgroundServices.Base;
 
-public abstract class BaseBackgroundService(IServiceProvider services, ILogger<BaseBackgroundService> logger) : BackgroundService
+public abstract class BaseTimeHostedBackgroundService(IServiceProvider services, ILogger<BaseTimeHostedBackgroundService> logger) : BackgroundService
 {
     // Could also be a async method, that can be awaited in ExecuteAsync above
     protected abstract Task DoWorkAsync(IServiceScope scope, CancellationToken cancellationToken);

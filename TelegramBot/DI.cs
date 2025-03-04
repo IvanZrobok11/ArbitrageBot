@@ -1,26 +1,27 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using BusinessLogic.Extensions;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Telegram.Bot;
 using TelegramBot.Controllers;
 
-namespace TelegramBot.Extensions;
+namespace TelegramBot;
 
-public static partial class TelegramBotExtensions
+public static partial class DI
 {
     public static IMvcBuilder AddTelegramBotControllers(this IMvcBuilder mvcBuilder)
         => mvcBuilder.AddApplicationPart(typeof(TelegramController).Assembly);
 
-    public static IHttpClientBuilder AddTelegramBot(this IServiceCollection services, IConfiguration configuration)
+    public static void AddTelegramBot(this IServiceCollection services, IConfiguration configuration)
     {
         var botConfigSection = configuration.GetSection("BotConfiguration");
         services.Configure<BotConfiguration>(botConfigSection);
 
-        services.AddScoped<TelegramService>();
         services.AddScoped<UpdateHandler>();
         services.ConfigureTelegramBotMvc();
 
-        return services.AddHttpClient("tgwebhook")
+        services.AddHttpClient("tgwebhook")
             .RemoveAllLoggers()
-            .AddTypedClient<ITelegramBotClient>(httpClient => new TelegramBotClient(botConfigSection.Get<BotConfiguration>()!.BotToken, httpClient));
+            .AddTypedClient<ITelegramBotClient>(httpClient => new TelegramBotClient(botConfigSection.Get<BotConfiguration>()!.BotToken, httpClient))
+            .AddHttpClientPolicy(configuration);
     }
 }
