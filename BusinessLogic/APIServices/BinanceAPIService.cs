@@ -1,6 +1,5 @@
 ﻿using Binance.Net.Clients;
 using Binance.Net.Objects.Models.Spot;
-using Binance.Net.Objects.Options;
 using BusinessLogic.Extensions;
 using BusinessLogic.Models;
 using CryptoExchange.Net.Interfaces;
@@ -12,7 +11,14 @@ namespace BusinessLogic.APIServices;
 
 public class BinanceAPIService : BaseCryptoExchange
 {
-    private static BinanceRestClient _restClient = new BinanceRestClient((o) => o.RequestTimeout = TimeSpan.FromSeconds(10));
+    private static BinanceRestClient _restClient = new BinanceRestClient((o) =>
+    {
+        o.RequestTimeout = TimeSpan.FromSeconds(5);
+        o.RateLimiterEnabled = false;
+        o.ReceiveWindow = TimeSpan.FromSeconds(10);
+        o.CachingEnabled = true;
+        o.CachingMaxAge = TimeSpan.FromSeconds(20);
+    });
     public BinanceAPIService(ILogger<BinanceAPIService> logger, IOptionsSnapshot<CryptoAPISettings> options) : base(logger)
     {
         var apiCredentials = options.Value.ExchangesCredentials[Type];

@@ -19,7 +19,15 @@ public abstract class BaseTimeHostedHealthTrackedBackgroundService(IServiceProvi
             {
                 using (var scope = services.CreateScope())
                 {
-                    await DoWorkAsync(scope, stoppingToken);
+                    try
+                    {
+                        await DoWorkAsync(scope, stoppingToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogCritical($"Service {GetType()} threw: {ex}");
+                        _lastErrorMessage = ex.ToString();
+                    }
                 }
             });
         }

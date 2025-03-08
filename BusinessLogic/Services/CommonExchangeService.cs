@@ -3,6 +3,7 @@ using BusinessLogic.Interfaces;
 using BusinessLogic.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
@@ -22,8 +23,7 @@ public class CommonExchangeService
 
     public async IAsyncEnumerable<AssetsPair> GetAssetsPairsAsync(ushort minPercent, ushort maxPercent, bool matchNetworks, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var sw = new Stopwatch();
-        sw.Start();
+        var sw = Stopwatch.StartNew();
 
         var tasks = _cryptoApiServices.Select(service => service.Value.GetAssetsDataAsync(cancellationToken));
         var assetsData = await Task.WhenAll(tasks);
@@ -63,47 +63,89 @@ public class CommonExchangeService
         }
     }
 
-    public async Task<List<AssetsPairViewModel>> GetSmartAssetPairsAsync(ushort minPercent, ushort maxPercent, bool matchNetworks, CancellationToken cancellationToken)
+    public async Task<List<AssetsPairViewModel>> GetSmartAssetPairsAsync(ushort minPercent, ushort maxPercent, CancellationToken cancellationToken)
     {
-        var diffPriceAssets = await GetAssetsPairsAsync(minPercent, maxPercent, matchNetworks, cancellationToken).ToListAsync(cancellationToken);
-        var sw = new Stopwatch();
-        sw.Start();
+        // Fetch differing price assets
+        var diffPriceAssets = await GetAssetsPairsAsync(minPercent, maxPercent, true, cancellationToken)
+            .ToListAsync(cancellationToken);
 
-        return diffPriceAssets.AsParallel().Select(async diffPriceAsset =>
+        // Use Parallel.ForEachAsync for better async parallel processing
+        var results = new ConcurrentBag<AssetsPairViewModel>();
+
+        var sw = Stopwatch.StartNew();
+        await Parallel.ForEachAsync(diffPriceAssets, cancellationToken, async (diffPriceAsset, token) =>
         {
-            var assetToBuy = diffPriceAsset.LowPriceAsset;
-            var assetToSell = diffPriceAsset.BigPriceAsset;
-            var intersectedNetworks = assetToSell.Networks.Select(n => n.Name).Intersect(assetToBuy.Networks.Select(n => n.Name));
-            var sw = new Stopwatch();
-            sw.Start();
-
-            _logger.LogWarning($"Start foreach async {assetToBuy.ExchangeSymbol}");
-
-            var orderBookToBuyTask = _cryptoApiServices[assetToBuy.Type].GetOrderBooksAsync(assetToBuy.ExchangeSymbol, cancellationToken);
-            var orderBookToSellTask = _cryptoApiServices[assetToSell.Type].GetOrderBooksAsync(assetToSell.ExchangeSymbol, cancellationToken);
-
-            await Task.WhenAll(orderBookToBuyTask, orderBookToSellTask);
-
-            var orderBookToBuy = orderBookToBuyTask.Result;
-            var orderBookToSell = orderBookToSellTask.Result;
-
-            _logger.LogWarning($"Finish foreach async {assetToBuy.ExchangeSymbol} " + sw.ElapsedMilliseconds);
-            return intersectedNetworks.Select(networkName =>
+            try
             {
-                var exchangeForBuy = new AssetExchangeInfo(assetToBuy.Type,
-                    assetToBuy.LastPrice,
-                    assetToBuy.Networks.First(x => x.Name == networkName),
-                    orderBookToBuy.AsksPercentage,
-                    orderBookToBuy.BidsPercentage);
+                var assetToBuy = diffPriceAsset.LowPriceAsset;
+                var assetToSell = diffPriceAsset.BigPriceAsset;
 
-                var exchangeForSell = new AssetExchangeInfo(assetToSell.Type,
-                    assetToSell.LastPrice,
-                    assetToSell.Networks.First(x => x.Name == networkName),
-                    orderBookToSell.AsksPercentage,
-                    orderBookToSell.BidsPercentage);
+                // Precompute intersected networks to avoid repeated computation
+                var intersectedNetworks = assetToSell.Networks
+                    .Select(n => n.Name)
+                    .Intersect(assetToBuy.Networks.Select(n => n.Name))
+                    .ToList();
 
-                return new AssetsPairViewModel(assetToSell.Symbol, diffPriceAsset.DiffPricePercent, exchangeForBuy, exchangeForSell);
-            }).ToList();
-        }).Select(x => x.Result).SelectMany(_ => _).ToList();
+                var orderBookToBuyTask = _cryptoApiServices[assetToBuy.Type]
+                    .GetOrderBooksAsync(assetToBuy.ExchangeSymbol, token);
+
+                var orderBookToSellTask = _cryptoApiServices[assetToSell.Type]
+                    .GetOrderBooksAsync(assetToSell.ExchangeSymbol, token);
+
+                await Task.WhenAll(orderBookToBuyTask, orderBookToSellTask);
+                var orderBookToBuy = orderBookToBuyTask.Result;
+                var orderBookToSell = orderBookToSellTask.Result;
+
+                // Optimize network selection with null checks and FirstOrDefault
+                var assetPairs = intersectedNetworks
+                    .Select(networkName =>
+                    {
+                        var buyNetwork = assetToBuy.Networks.FirstOrDefault(x => x.Name == networkName);
+                        var sellNetwork = assetToSell.Networks.FirstOrDefault(x => x.Name == networkName);
+
+                        if (buyNetwork == null || sellNetwork == null)
+                            return null;
+
+                        var exchangeForBuy = new AssetExchangeInfo(
+                            assetToBuy.Type,
+                            assetToBuy.LastPrice,
+                            buyNetwork,
+                            orderBookToBuy.AsksPercentage,
+                            orderBookToBuy.BidsPercentage
+                        );
+
+                        var exchangeForSell = new AssetExchangeInfo(
+                            assetToSell.Type,
+                            assetToSell.LastPrice,
+                            sellNetwork,
+                            orderBookToSell.AsksPercentage,
+                            orderBookToSell.BidsPercentage
+                        );
+
+                        return new AssetsPairViewModel(
+                            assetToSell.Symbol,
+                            diffPriceAsset.DiffPricePercent,
+                            exchangeForBuy,
+                            exchangeForSell
+                        );
+                    })
+                    .Where(pair => pair != null)
+                    .ToList();
+
+                // Add results to thread-safe collection
+                foreach (var pair in assetPairs)
+                {
+                    results.Add(pair);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log or handle exceptions for individual asset processing
+                _logger.LogError(ex, $"Error processing asset pair: {diffPriceAsset.LowPriceAsset.Symbol}");
+            }
+        });
+        sw.Stop();
+        _logger.LogInformation($"GetSmartAssetPairsAsync elapsed milliseconds: {sw.ElapsedMilliseconds}");
+        return results.ToList();
     }
 }

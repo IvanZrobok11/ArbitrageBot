@@ -8,10 +8,10 @@ public class AssetStats
     [JsonInclude] public readonly decimal USDTBudget;
     [JsonInclude] public readonly decimal FixedWithdrawFee; // ціна фіксованого податку в USDT 
     [JsonInclude] public readonly decimal DynamicWithdrawForUSDTBudgetFee; // ціна податку для 100 USDT    
+    [JsonInclude] public decimal Fees => FixedWithdrawFee + DynamicWithdrawForUSDTBudgetFee;
     [JsonInclude] public readonly decimal? MinSellPrice; // На яку суму мінімально можна продати за 1 раз
     [JsonInclude] public readonly decimal? MaxSellPrice; // На яку суму максимально можна продати за 1 раз
     [JsonInclude] public readonly decimal USDTProfit; // скільки отримаю за переказ на 100 USDT
-
     public AssetStats(decimal uSDTBudget, AssetExchangeInfo exchangeToBuy, AssetExchangeInfo exchangeToSell, decimal diffPercent)
     {
         USDTBudget = uSDTBudget;

@@ -10,7 +10,13 @@ namespace BusinessLogic.APIServices;
 
 public class KuCoinAPIService : BaseCryptoExchange
 {
-    public static KucoinRestClient restClient = new KucoinRestClient((o) => o.RequestTimeout = TimeSpan.FromSeconds(10));
+    public static KucoinRestClient restClient = new KucoinRestClient((o) =>
+    {
+        o.RequestTimeout = TimeSpan.FromSeconds(10);
+        o.RateLimiterEnabled = false;
+        o.CachingEnabled = true;
+        o.CachingMaxAge = TimeSpan.FromSeconds(20);
+    });
     public KuCoinAPIService(ILogger<KuCoinAPIService> logger, IOptionsSnapshot<CryptoAPISettings> options) : base(logger)
     {
         // restClient.SetApiCredentials(new Kucoin.Net.Objects.KucoinApiCredentials("", "", ""));
@@ -42,7 +48,7 @@ public class KuCoinAPIService : BaseCryptoExchange
             foreach (var network in asset.Networks)
             {
                 if (!network.IsDepositEnabled || !network.IsWithdrawEnabled) continue;
-                networks = networks.Append(new NetworkInfo(network.NetworkName,
+                networks = networks.Append(new NetworkInfo(network.NetworkId.ToUpper(),
                     network.WithdrawMaxFee ?? network.WithdrawalMinFee, // TODO: maybe better take average fee
                     network.WithdrawFeeRate,
                     network.DepositMinQuantity,

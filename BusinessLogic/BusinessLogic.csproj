@@ -9,7 +9,9 @@
   <ItemGroup>
     <PackageReference Include="Binance.Net" Version="10.18.0" />
     <PackageReference Include="GateIo.Net" Version="1.20.0" />
+    <PackageReference Include="Huobi.Net" Version="5.7.0" />
     <PackageReference Include="JK.Mexc.Net" Version="2.1.0" />
+    <PackageReference Include="JK.OKX.Net" Version="2.15.0" />
     <PackageReference Include="Kucoin.Net" Version="5.24.0" />
     <PackageReference Include="Bybit.Net" Version="4.3.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.2" />

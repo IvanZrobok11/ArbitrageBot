@@ -39,7 +39,7 @@ public class CryptoV2Controller(ILogger<CryptoV2Controller> logger, CommonExchan
         [FromQuery] bool matchNetworks, CancellationToken cancellationToken)
     {
         var results = await commonExchangeService
-            .GetSmartAssetPairsAsync(minPercent, maxPercent, matchNetworks, cancellationToken);
+            .GetSmartAssetPairsAsync(minPercent, maxPercent, cancellationToken);
 
         return Ok(results
             .Where(r => string.IsNullOrWhiteSpace(filterTicket) ? true : r.Symbol.Contains(filterTicket))

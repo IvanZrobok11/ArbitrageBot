@@ -9,7 +9,7 @@ public abstract class BaseHealthTrackedBackgroundService : BackgroundService
     }
 
     private volatile bool _isRunning = false;
-    private volatile string? _lastErrorMessage = null;
+    protected volatile string? _lastErrorMessage = null;
     private DateTime _lastExecutionTime;
 
     public bool IsRunning => _isRunning;
