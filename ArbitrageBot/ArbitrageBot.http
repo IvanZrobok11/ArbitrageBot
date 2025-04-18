@@ -1,0 +1,6 @@
+@ArbitrageBot_HostAddress = http://localhost:5230
+
+GET {{ArbitrageBot_HostAddress}}/api/crypto/prices?minPercent=5&maxPercent=300&filterTicket=USDT
+Accept: application/json
+
+###

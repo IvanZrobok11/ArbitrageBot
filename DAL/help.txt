@@ -1,0 +1,2 @@
+dotnet ef migrations add <MirationName>
+dotnet ef database update
