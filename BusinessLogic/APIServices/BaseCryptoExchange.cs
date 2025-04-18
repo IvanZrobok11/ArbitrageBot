@@ -6,9 +6,10 @@ using Microsoft.Extensions.Logging;
 
 namespace BusinessLogic.APIServices;
 
+public record CommonPrice(string ExchangeSymbol, decimal LastPrice, decimal BestBidPrice, decimal BestAskPrice);
 public record ExchangeApiData(
     Dictionary<string, string> ActiveBaseCoinsBySymbols,
-    IEnumerable<(string ExchangeSymbol, decimal Price)> Prices,
+    IEnumerable<CommonPrice> Prices,
     IEnumerable<(string BaseAsset, IEnumerable<NetworkInfo>? ConvertedNetworks)> AssetsInfo
     );
 
@@ -38,7 +39,7 @@ public abstract class BaseCryptoExchange(ILogger logger) : ICryptoExchangeApiSer
         foreach (var ticker in allPrices)
         {
             string symbol = ticker.ExchangeSymbol;
-            var lastPrice = ticker.Price;
+            var lastPrice = ticker.LastPrice;
 
             if (activeSymbols.ContainsKey(symbol))
             {
@@ -48,7 +49,21 @@ public abstract class BaseCryptoExchange(ILogger logger) : ICryptoExchangeApiSer
 
                 if (networks is null || !networks.Any()) continue;
 
-                var cryptoPrice = new AssetData(Type, symbol, lastPrice, networks.ToList());
+                //TODO: temp
+                string quote = "";
+                if (symbol.Contains("USDT"))
+                {
+                    quote = "USDT";
+                }
+                if (symbol.Contains("USDС"))
+                {
+                    quote = "USDС";
+                }
+                if (symbol.Contains("BTC"))
+                {
+                    quote = "BTC";
+                }
+                var cryptoPrice = new AssetData(Type, symbol, quote, lastPrice, ticker.BestBidPrice, ticker.BestAskPrice, networks.ToList());
                 tradingPrices.Add(cryptoPrice);
             }
         }
@@ -69,6 +84,7 @@ public abstract class BaseCryptoExchange(ILogger logger) : ICryptoExchangeApiSer
         //return Math.Abs(bidsPercent - asksQuantity);
         return (asksPercent, bidsPercent);
     }
+
     protected abstract Task<ExchangeApiData> FetchDataAsync(CancellationToken cancellationToken);
 
     protected abstract Task<(IEnumerable<ISymbolOrderBookEntry> Asks, IEnumerable<ISymbolOrderBookEntry> Bids)> GetAsksBids(string symbol, CancellationToken cancellationToken);

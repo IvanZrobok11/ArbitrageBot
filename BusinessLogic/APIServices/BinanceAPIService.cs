@@ -19,6 +19,7 @@ public class BinanceAPIService : BaseCryptoExchange
         o.CachingEnabled = true;
         o.CachingMaxAge = TimeSpan.FromSeconds(20);
     });
+
     public BinanceAPIService(ILogger<BinanceAPIService> logger, IOptionsSnapshot<CryptoAPISettings> options) : base(logger)
     {
         var apiCredentials = options.Value.ExchangesCredentials[Type];
@@ -30,7 +31,7 @@ public class BinanceAPIService : BaseCryptoExchange
     protected override async Task<ExchangeApiData> FetchDataAsync(CancellationToken cancellationToken)
     {
         var exchangeInfoTask = _restClient.SpotApi.ExchangeData.GetExchangeInfoAsync(symbolStatus: Binance.Net.Enums.SymbolStatus.Trading, ct: cancellationToken); // api/v3/exchangeInfo?permissions=SPOT/ all symbols with baseCoin, quoteCoin, and Status
-        var pricesTask = _restClient.SpotApi.ExchangeData.GetPricesAsync(cancellationToken); //api/v3/ticker/price // symbol and last price
+        var pricesTask = _restClient.SpotApi.ExchangeData.GetTickersAsync(cancellationToken); //api/v3/ticker/price // symbol and last price
         var userAssetsTask = _restClient.SpotApi.Account.GetUserAssetsAsync(ct: cancellationToken); // with network info
 
         await Task.WhenAll(exchangeInfoTask, pricesTask, userAssetsTask);
@@ -42,7 +43,8 @@ public class BinanceAPIService : BaseCryptoExchange
         var activeSymbols = exchangeInfoResult.Data.Symbols
             .Where(x => x.Status == Binance.Net.Enums.SymbolStatus.Trading && x.IsSpotTradingAllowed)
             .ToDictionary(x => x.Name, x => x.BaseAsset); // price by symbol
-        var allPrices = pricesResult.Data.Select(x => (x.Symbol, x.Price));
+
+        var allPrices = pricesResult.Data.Select(price => new CommonPrice(price.Symbol, price.LastPrice, price.BestBidPrice, price.BestAskPrice));
         var assets = GetConvertedAssets(userAssetsResult.Data);
 
         return new ExchangeApiData(activeSymbols, allPrices, assets);

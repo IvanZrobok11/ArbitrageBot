@@ -18,6 +18,7 @@
   <ItemGroup>
     <ProjectReference Include="..\BusinessLogic\BusinessLogic.csproj" />
     <ProjectReference Include="..\DAL\DAL.csproj" />
+    <ProjectReference Include="..\HostedService.Extensions\HostedService.Extensions.csproj" />
     <ProjectReference Include="..\TelegramBot\TelegramBot.csproj" />
   </ItemGroup>
     

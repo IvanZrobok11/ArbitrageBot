@@ -1,9 +1,9 @@
 ﻿using ArbitrageBot.BackgroundServices;
-using ArbitrageBot.BackgroundServices.Base;
 using ArbitrageBot.Extensions;
 using BusinessLogic;
 using BusinessLogic.Models;
 using DAL;
+using HostedService.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.EntityFrameworkCore;
@@ -17,13 +17,12 @@ var configuration = builder.Configuration;
 builder.Services.AddDAL(builder.Configuration);
 
 services.Configure<BackgroundServicesOption>(builder.Configuration.GetSection(BackgroundServicesOption.SectionKey));
-services.AddHealthTrackedBackgroundServices();
 services.AddHostedService<AssetsBackgroundService>();
 
 // Add health checks
 services.AddHealthChecks()
     .AddSqlite(builder.Configuration.GetConnectionString("DefaultConnection")!, name: "sqlite")
-    .AddBackgroundServicesCheck(name: "background_services", staleExecutionThreshold: TimeSpan.FromMinutes(10))
+    .AddBackgroundServicesCheck()
     .AddMemoryHealthCheck();
 
 builder.Services.Configure<CryptoAPISettings>(builder.Configuration.GetSection(CryptoAPISettings.SectionKey));

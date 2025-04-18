@@ -38,7 +38,7 @@ namespace BusinessLogic.APIServices
                 .Where(x => x.State == Huobi.Net.Enums.SymbolState.Online)
                 .ToDictionary(x => x.Name, x => x.BaseAsset);
 
-            var allPrices = spotTickersResult.Data.Ticks.Select(x => (x.Symbol, x.LastTradePrice));
+            var allPrices = spotTickersResult.Data.Ticks.Select(x => new CommonPrice(x.Symbol, x.LastTradePrice, x.BestBidPrice, x.BestAskPrice));
 
             var assets = GetConvertedAssets(assetInfoResult.Data);
             return new ExchangeApiData(activeSymbols, allPrices, assets);

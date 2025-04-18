@@ -35,7 +35,10 @@ public class KuCoinAPIService : BaseCryptoExchange
         var assetsResult = assetsTask.Result.ShouldSuccess();
 
         var activeSymbols = symbolsResult.Data.Where(x => x.EnableTrading).ToDictionary(x => x.Name, x => x.BaseAsset); // price by symbol
-        var allPrices = tickersResult.Data.Data.Where(t => t.LastPrice.HasValue).Select(x => (x.Symbol, x.LastPrice!.Value));
+
+        var allPrices = tickersResult.Data.Data.Where(t => t.LastPrice.HasValue)
+            .Select(x => new CommonPrice(x.Symbol, x.LastPrice!.Value, x.BestBidPrice ?? x.LastPrice.Value, x.BestAskPrice ?? x.LastPrice.Value));
+
         var assets = GetConvertedAssets(assetsResult.Data);
         return new ExchangeApiData(activeSymbols, allPrices, assets);
     }

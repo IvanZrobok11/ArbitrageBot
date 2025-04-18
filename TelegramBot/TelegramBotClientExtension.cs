@@ -7,9 +7,9 @@ using Telegram.Bot.Types.Enums;
 
 namespace TelegramBot;
 
-public class TelegramAssetsSender(ITelegramBotClient TelegramBotClient)
+public static class TelegramBotClientExtension
 {
-    public async Task SendAsync(long telegramUserId, AssetsPairViewModel assetsPair, CancellationToken cancellationToken)
+    public static async Task SendAsync(this ITelegramBotClient TelegramBotClient, long telegramUserId, AssetsPairViewModel assetsPair, CancellationToken cancellationToken)
     {
         try
         {
@@ -17,12 +17,7 @@ public class TelegramAssetsSender(ITelegramBotClient TelegramBotClient)
             string htmlMessage = ConvertToFormattedHtml(assetsPair);
 
             // Send message with HTML parsing
-            await TelegramBotClient.SendMessage(
-                chatId: telegramUserId,
-                text: htmlMessage,
-                parseMode: ParseMode.Html
-            );
-
+            await TelegramBotClient.SendMessage(telegramUserId, htmlMessage, parseMode: ParseMode.Html);
             Console.WriteLine("HTML message sent successfully!");
         }
         catch (Exception ex)
@@ -33,7 +28,7 @@ public class TelegramAssetsSender(ITelegramBotClient TelegramBotClient)
         }
     }
 
-    private string ConvertToFormattedHtml(AssetsPairViewModel model)
+    private static string ConvertToFormattedHtml(AssetsPairViewModel model)
     {
         var htmlBuilder = new StringBuilder();
 
@@ -48,9 +43,9 @@ public class TelegramAssetsSender(ITelegramBotClient TelegramBotClient)
             htmlBuilder.AppendLine("<b>🟢 Buy Exchange Details:</b>");
             htmlBuilder.AppendLine($"Exchange: {buyExchange.Type}");
             htmlBuilder.AppendLine($"Network: {buyExchange.Network.Name}");
-            htmlBuilder.AppendLine($"Price: {buyExchange.Price.RoundDecimals(6)}");
-            htmlBuilder.AppendLine($"Asks: {buyExchange.AsksPercentage.RoundDecimals(1)}%");
-            htmlBuilder.AppendLine($"Bids: {buyExchange.BidsPercentage.RoundDecimals(1)}%");
+            htmlBuilder.AppendLine($"Price: {buyExchange.LastPrice.RoundDecimals(6)}");
+            htmlBuilder.AppendLine($"Asks: {buyExchange.WantToSellPercentage.RoundDecimals(1)}%");
+            htmlBuilder.AppendLine($"Bids: {buyExchange.WantToBuyPercentage.RoundDecimals(1)}%");
             htmlBuilder.AppendLine($"Liquidity: {buyExchange.LiquidityPercentage.RoundDecimals(1)}%\n");
         }
 
@@ -61,9 +56,9 @@ public class TelegramAssetsSender(ITelegramBotClient TelegramBotClient)
             htmlBuilder.AppendLine("<b>🔴 Sell Exchange Details:</b>");
             htmlBuilder.AppendLine($"Exchange: {sellExchange.Type}");
             htmlBuilder.AppendLine($"Network: {sellExchange.Network.Name}");
-            htmlBuilder.AppendLine($"Price: {sellExchange.Price.RoundDecimals(9)}");
-            htmlBuilder.AppendLine($"Asks: {sellExchange.AsksPercentage.RoundDecimals(1)}%");
-            htmlBuilder.AppendLine($"Bids: {sellExchange.BidsPercentage.RoundDecimals(1)}%");
+            htmlBuilder.AppendLine($"Price: {sellExchange.LastPrice.RoundDecimals(9)}");
+            htmlBuilder.AppendLine($"Asks: {sellExchange.WantToSellPercentage.RoundDecimals(1)}%");
+            htmlBuilder.AppendLine($"Bids: {sellExchange.WantToBuyPercentage.RoundDecimals(1)}%");
             htmlBuilder.AppendLine($"Liquidity: {sellExchange.LiquidityPercentage.RoundDecimals(1)}%\n");
         }
 
@@ -72,13 +67,13 @@ public class TelegramAssetsSender(ITelegramBotClient TelegramBotClient)
         if (stats != null && stats.Count > 0)
         {
             htmlBuilder.AppendLine("<b>📈 Profit Statistics:</b>");
-            foreach (var stat in stats.OrderBy(x => x.USDTBudget))
+            foreach (var stat in stats.OrderBy(x => x.Budget))
             {
                 htmlBuilder.AppendLine(
-                    $"💲 Budget: {stat.USDTBudget.RoundDecimals(3)} USDT | " +
-                    $"Profit: {stat.USDTProfit.RoundDecimals(2)} USDT"
+                    $"💲 Budget: {stat.Budget.RoundDecimals(3)} {stat.BudgetCurrency} | " +
+                    $"Profit: {stat.Profit.RoundDecimals(2)} {stat.BudgetCurrency}"
                 );
-                htmlBuilder.AppendLine($"🏦 Fees: {stat.Fees} USDT");
+                htmlBuilder.AppendLine($"🏦 Fees: {stat.Fees} {stat.BudgetCurrency}");
             }
         }
 

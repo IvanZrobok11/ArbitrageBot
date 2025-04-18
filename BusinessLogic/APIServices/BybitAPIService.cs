@@ -19,6 +19,7 @@ public class ByBitAPIService : BaseCryptoExchange
         o.CachingEnabled = true;
         o.CachingMaxAge = TimeSpan.FromSeconds(20);
     });
+
     public ByBitAPIService(ILogger<ByBitAPIService> logger, IOptionsSnapshot<CryptoAPISettings> options) : base(logger)
     {
         var apiCredentials = options.Value.ExchangesCredentials[Type];
@@ -40,10 +41,11 @@ public class ByBitAPIService : BaseCryptoExchange
         var assetInfoResult = assetInfoTask.Result.ShouldSuccess();
 
         var activeSymbols = spotSymbolsResult.Data.List
-            .Where(x => x.Status == Bybit.Net.Enums.SymbolStatus.Trading)
+            .Where(x => x.Status == SymbolStatus.Trading)
             .ToDictionary(x => x.Name, x => x.BaseAsset);
 
-        var allPrices = spotTickersResult.Data.List.Select(x => (x.Symbol, x.LastPrice));
+
+        var allPrices = spotTickersResult.Data.List.Select(p => new CommonPrice(p.Symbol, p.LastPrice, p.BestBidPrice ?? p.LastPrice, p.BestAskPrice ?? p.LastPrice));
 
         var assets = GetConvertedAssets(assetInfoResult.Data.Assets);
         return new ExchangeApiData(activeSymbols, allPrices, assets);

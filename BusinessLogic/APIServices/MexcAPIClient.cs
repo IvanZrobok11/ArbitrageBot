@@ -30,7 +30,7 @@ public class MexcAPIClient : BaseCryptoExchange
     protected override async Task<ExchangeApiData> FetchDataAsync(CancellationToken cancellationToken)
     {
         var exchangeInfoTask = restClient.SpotApi.ExchangeData.GetExchangeInfoAsync(ct: cancellationToken); // api/v3/exchangeInfo// all symbols with baseCoin, quoteCoin, and Status
-        var pricesTask = restClient.SpotApi.ExchangeData.GetPricesAsync(); // spot/tickers // symbol and last price
+        var pricesTask = restClient.SpotApi.ExchangeData.GetTickersAsync(); // spot/tickers // symbol and last price
         var userAssetsTask = restClient.SpotApi.Account.GetUserAssetsAsync(); // with network info
 
         await Task.WhenAll(exchangeInfoTask, pricesTask, userAssetsTask);
@@ -42,7 +42,8 @@ public class MexcAPIClient : BaseCryptoExchange
         var activeSymbols = exchangeInfoResult.Data.Symbols
             .Where(x => x.Status == SymbolStatus.Enabled && x.IsSpotTradingAllowed)
             .ToDictionary(x => x.Name, x => x.BaseAsset); // price by symbol
-        var allPrices = pricesTask.Result.Data.Select(x => (x.Symbol, x.Price));
+
+        var allPrices = pricesTask.Result.Data.Select(x => new CommonPrice(x.Symbol, x.LastPrice, x.BestBidPrice, x.BestAskPrice));
         var assets = GetConvertedAssets(userAssetsTask.Result.Data);
 
         return new ExchangeApiData(activeSymbols, allPrices, assets);

@@ -5,7 +5,10 @@ namespace BusinessLogic.Models;
 public record AssetData(
     [property: JsonConverter(typeof(JsonStringEnumConverter))] ExchangeMarketType Type,
     string ExchangeSymbol,
+    string QuoteAsset,
     decimal LastPrice,
+    decimal BestBidPrice,
+    decimal BestAskPrice,
     List<NetworkInfo> Networks)
 {
     [JsonInclude]

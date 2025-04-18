@@ -40,7 +40,7 @@ public class GateIoAPIService : BaseCryptoExchange
             .Where(x => x.TradeStatus == GateIo.Net.Enums.SymbolStatus.Tradable)
             .ToDictionary(x => x.Name, x => x.BaseAsset);
 
-        var prices = tickersResult.Data.Select(x => (x.Symbol, x.LastPrice));
+        var prices = tickersResult.Data.Select(x => new CommonPrice(x.Symbol, x.LastPrice, x.BestBidPrice ?? x.LastPrice, x.BestAskPrice ?? x.LastPrice));
         var assets = GetConvertedAssets(userAssetsResult.Data);
 
         return new ExchangeApiData(activeSymbols, prices, assets);

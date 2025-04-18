@@ -8,13 +8,14 @@ namespace DAL.Models
     {
         public UserConfiguration() { }
 
-        public UserConfiguration(long telegramUserId, int budget, byte minChanceToBuy, byte minChangeToSell, decimal exceptedProfit)
+        public UserConfiguration(long telegramUserId, int budget, byte minChanceToBuy, byte minChangeToSell, decimal exceptedProfit, string? ticketFilter = null)
         {
             TelegramUserId = telegramUserId;
             Budget = budget;
             MinChanceToBuy = minChanceToBuy;
             MinChangeToSell = minChangeToSell;
             ExceptedProfit = exceptedProfit;
+            TicketFilter = ticketFilter;
         }
 
         [Key, ForeignKey(nameof(User))]
@@ -23,7 +24,7 @@ namespace DAL.Models
         public byte MinChanceToBuy { get; set; }
         public byte MinChangeToSell { get; set; }
         public decimal ExceptedProfit { get; set; }
-
+        public string? TicketFilter { get; set; }
         public User User { get; set; }
     }
 }

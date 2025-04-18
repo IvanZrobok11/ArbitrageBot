@@ -28,7 +28,7 @@ public class UserConfigurationService(AppDbContext appDbContext)
         {
             return null;
         }
-        var dto = new UserConfigurationDTO(user.Budget, user.MinChanceToBuy, user.MinChangeToSell, user.ExceptedProfit);
+        var dto = new UserConfigurationDTO(user.Budget, user.MinChanceToBuy, user.MinChangeToSell, user.ExceptedProfit, user.TicketFilter);
         return JsonSerializer.Serialize(dto, new JsonSerializerOptions { WriteIndented = true });
     }
 
@@ -49,7 +49,8 @@ public class UserConfigurationService(AppDbContext appDbContext)
                 userConfigurationDTO.Budget,
                 userConfigurationDTO.MinChanceToBuy,
                 userConfigurationDTO.MinChangeToSell,
-                userConfigurationDTO.ExceptedProfit));
+                userConfigurationDTO.ExceptedProfit,
+                userConfigurationDTO.TickerFilter));
         }
         else
         {
@@ -57,6 +58,7 @@ public class UserConfigurationService(AppDbContext appDbContext)
             user.UserConfiguration.MinChanceToBuy = userConfigurationDTO.MinChanceToBuy;
             user.UserConfiguration.MinChangeToSell = userConfigurationDTO.MinChangeToSell;
             user.UserConfiguration.ExceptedProfit = userConfigurationDTO.ExceptedProfit;
+            user.UserConfiguration.TicketFilter = userConfigurationDTO.TickerFilter;
         }
         var changesCount = await appDbContext.SaveChangesAsync(cancellationToken);
         return changesCount > 0;

@@ -7,7 +7,7 @@ namespace ArbitrageBot.Controllers;
 [ApiController]
 [Route("api/v{version:apiVersion}/crypto")]
 [ApiVersion("1.0")]
-public class CryptoV1Controller(ILogger<CryptoV1Controller> logger, CommonExchangeService commonExchangeService, IConfiguration configuration) : ControllerBase
+public class CryptoV1Controller(CommonExchangeService commonExchangeService) : ControllerBase
 {
     [HttpGet("prices")]
     public async Task<IActionResult> GetAssets(
@@ -29,7 +29,7 @@ public class CryptoV1Controller(ILogger<CryptoV1Controller> logger, CommonExchan
 [ApiController]
 [Route("api/v{version:apiVersion}/crypto")]
 [ApiVersion("2.0")]
-public class CryptoV2Controller(ILogger<CryptoV2Controller> logger, CommonExchangeService commonExchangeService, IConfiguration configuration) : ControllerBase
+public class CryptoV2Controller(CommonExchangeService commonExchangeService) : ControllerBase
 {
     [HttpGet("prices")]
     public async Task<IActionResult> GetAssets(

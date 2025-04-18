@@ -4,5 +4,6 @@ public record UserConfigurationDTO(
     int Budget,
     byte MinChanceToBuy,
     byte MinChangeToSell,
-    decimal ExceptedProfit
+    decimal ExceptedProfit,
+    string? TickerFilter
 );

@@ -37,7 +37,10 @@ namespace BusinessLogic.APIServices
             var activeSymbols = exchangeInfoResult.Data
                 .Where(x => x.State == OKX.Net.Enums.InstrumentState.Live)
                 .ToDictionary(x => x.Symbol, x => x.BaseAsset); // price by symbol
-            var allPrices = pricesResult.Data.Where(x => x.LastPrice is not null).Select(x => (x.Symbol, x.LastPrice!.Value));
+
+            var allPrices = pricesResult.Data.Where(x => x.LastPrice is not null)
+                .Select(x => new CommonPrice(x.Symbol, x.LastPrice!.Value, x.BestAskPrice ?? x.LastPrice.Value, x.BestAskPrice ?? x.LastPrice.Value));
+
             var assets = GetConvertedAssets(userAssetsResult.Data);
 
             return new ExchangeApiData(activeSymbols, allPrices, assets);

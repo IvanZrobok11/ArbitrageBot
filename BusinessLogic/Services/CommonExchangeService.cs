@@ -21,8 +21,17 @@ public class CommonExchangeService
         _cryptoApiServices = cryptoApiServices.Where(service => allowedExchanges.Contains(service.Type)).ToDictionary(s => s.Type, s => s);
     }
 
-    public async IAsyncEnumerable<AssetsPair> GetAssetsPairsAsync(ushort minPercent, ushort maxPercent, bool matchNetworks, [EnumeratorCancellation] CancellationToken cancellationToken)
+    public async IAsyncEnumerable<AssetsPair> GetAssetsPairsAsync(decimal minPercent, decimal maxPercent, bool matchNetworks, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        if (minPercent > maxPercent)
+        {
+            throw new ArgumentException("Min value higher than max value");
+        }
+        if (minPercent < 0 || maxPercent < 0)
+        {
+            throw new ArgumentException("Values should be more than zero");
+        }
+
         var sw = Stopwatch.StartNew();
 
         var tasks = _cryptoApiServices.Select(service => service.Value.GetAssetsDataAsync(cancellationToken));
@@ -63,7 +72,7 @@ public class CommonExchangeService
         }
     }
 
-    public async Task<List<AssetsPairViewModel>> GetSmartAssetPairsAsync(ushort minPercent, ushort maxPercent, CancellationToken cancellationToken)
+    public async Task<List<AssetsPairViewModel>> GetSmartAssetPairsAsync(decimal minPercent, decimal maxPercent, CancellationToken cancellationToken)
     {
         // Fetch differing price assets
         var diffPriceAssets = await GetAssetsPairsAsync(minPercent, maxPercent, true, cancellationToken)
@@ -73,7 +82,13 @@ public class CommonExchangeService
         var results = new ConcurrentBag<AssetsPairViewModel>();
 
         var sw = Stopwatch.StartNew();
-        await Parallel.ForEachAsync(diffPriceAssets, cancellationToken, async (diffPriceAsset, token) =>
+
+        var parallelOptions = new ParallelOptions
+        {
+            MaxDegreeOfParallelism = 8,
+            CancellationToken = cancellationToken
+        };
+        await Parallel.ForEachAsync(diffPriceAssets.AsEnumerable(), parallelOptions, async (diffPriceAsset, token) =>
         {
             try
             {
@@ -103,12 +118,13 @@ public class CommonExchangeService
                         var buyNetwork = assetToBuy.Networks.FirstOrDefault(x => x.Name == networkName);
                         var sellNetwork = assetToSell.Networks.FirstOrDefault(x => x.Name == networkName);
 
-                        if (buyNetwork == null || sellNetwork == null)
-                            return null;
+                        if (buyNetwork == null || sellNetwork == null) return null;
 
                         var exchangeForBuy = new AssetExchangeInfo(
                             assetToBuy.Type,
                             assetToBuy.LastPrice,
+                            assetToBuy.BestBidPrice,
+                            assetToBuy.BestAskPrice,
                             buyNetwork,
                             orderBookToBuy.AsksPercentage,
                             orderBookToBuy.BidsPercentage
@@ -117,6 +133,8 @@ public class CommonExchangeService
                         var exchangeForSell = new AssetExchangeInfo(
                             assetToSell.Type,
                             assetToSell.LastPrice,
+                            assetToSell.BestBidPrice,
+                            assetToSell.BestAskPrice,
                             sellNetwork,
                             orderBookToSell.AsksPercentage,
                             orderBookToSell.BidsPercentage
@@ -124,18 +142,18 @@ public class CommonExchangeService
 
                         return new AssetsPairViewModel(
                             assetToSell.Symbol,
+                            assetToSell.QuoteAsset,
                             diffPriceAsset.DiffPricePercent,
                             exchangeForBuy,
                             exchangeForSell
                         );
                     })
-                    .Where(pair => pair != null)
                     .ToList();
 
                 // Add results to thread-safe collection
                 foreach (var pair in assetPairs)
                 {
-                    results.Add(pair);
+                    if (pair is not null) results.Add(pair);
                 }
             }
             catch (Exception ex)

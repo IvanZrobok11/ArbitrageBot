@@ -17,7 +17,6 @@ public static partial class DI
         services.Configure<BotConfiguration>(botConfigSection);
 
         services.AddScoped<UpdateHandler>();
-        services.AddScoped<TelegramAssetsSender>();
         services.ConfigureTelegramBotMvc();
 
         services.AddHttpClient("tgwebhook")
