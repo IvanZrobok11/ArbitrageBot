@@ -25,6 +25,36 @@ ArbitrageBot is a web application designed to find asset price differences on cr
   - Price difference threshold configuration
   - Asset-specific filtering options
 
+Example Telegram Notification:
+```
+📊 Trading Symbol: GMRXUSDT
+Price Difference: 9.29%
+
+🟢 Buy Exchange Details:
+Exchange: Mexc
+Network: BSC
+Price: 0.00014
+Asks: 87.4%
+Bids: 12.6%
+Liquidity: 25.2%
+
+🔴 Sell Exchange Details:
+Exchange: KuCoin
+Network: BSC
+Price: 0.000153
+Asks: 25.0%
+Bids: 75.0%
+Liquidity: 50.0%
+
+📈 Profit Statistics:
+💲 Budget: 100 USDT | Profit: 8.91 USDT
+🏦 Fees: 0.376840 USDT
+💲 Budget: 500 USDT | Profit: 46.05 USDT
+🏦 Fees: 0.376840 USDT
+💲 Budget: 1000 USDT | Profit: 92.48 USDT
+🏦 Fees: 0.376840 USDT
+```
+
 - **REST API**:
   - V1 and V2 endpoints for price queries
   - Filtering capabilities
@@ -60,6 +90,80 @@ Enhanced version with additional data including:
 - Withdrawal limits
 - Liquidity information
 - Order book depth
+
+Example Request:
+```bash
+curl "http://localhost:5000/api/v2/crypto/prices?minPercent=3&maxPercent=100&matchNetworks=true&filterTicket=USDT"
+```
+
+Example Response:
+```json
+[
+  {
+    "symbol": "ARCUSDT",          // Trading pair symbol
+    "quote": "USDT",             // Quote currency
+    "diffPercent": 15.705,       // Price difference percentage between exchanges
+    "exchangeForBuy": {
+      "type": "Mexc",           // Exchange name for buying
+      "price": 0.006482,        // Current price on the exchange
+      "network": {
+        "name": "ETH",          // Network name (e.g., ETH, BSC, TRX)
+        "withdrawFee": 106,      // Fixed withdrawal fee
+        "withdrawPercentageFee": -1,  // Percentage-based withdrawal fee (-1 if not applicable)
+        "depositMinSize": -1,    // Minimum deposit amount (-1 if no limit)
+        "withdrawMinSize": 576,  // Minimum withdrawal amount
+        "withdrawMaxSize": 10000000  // Maximum withdrawal amount
+      },
+      "asksPercentage": 37.3,   // Percentage of ask orders in order book
+      "bidsPercentage": 62.7,   // Percentage of bid orders in order book
+      "liquidityPercentage": 74.6  // Overall liquidity indicator
+    },
+    "exchangeForSell": {
+      "type": "KuCoin",         // Exchange name for selling
+      // ... similar structure as exchangeForBuy ...
+    },
+    "stats": [
+      {
+        "budgetCurrency": "USDT",   // Currency used for calculations
+        "budget": 100,              // Investment amount
+        "fees": 4.017092,          // Total fees
+        "fixedWithdrawFee": 4.017092,  // Fixed withdrawal fees
+        "dynamicWithdrawForCurrencyBudgetFee": 0,  // Dynamic withdrawal fees
+        "minBuyWithdrawPrice": 3.733632,   // Minimum amount for buying
+        "maxBuyWithdrawPrice": 64820,      // Maximum amount for buying
+        "minSellWithdrawPrice": 6.66,      // Minimum amount for selling
+        "maxSellWithdrawPrice": null,      // Maximum amount for selling
+        "profit": 11.687908               // Expected profit in USDT
+      }
+      // Additional stats for different budget amounts...
+    ]
+  }
+]
+```
+
+The response provides comprehensive information about trading opportunities:
+
+1. **Basic Information**:
+   - `symbol`: Trading pair identifier
+   - `quote`: Quote currency (e.g., USDT)
+   - `diffPercent`: Price difference between exchanges
+
+2. **Exchange Details** (for both buy and sell):
+   - Current prices
+   - Network information
+   - Order book statistics
+   - Liquidity indicators
+
+3. **Network Information**:
+   - Supported networks
+   - Withdrawal fees (fixed and percentage-based)
+   - Deposit and withdrawal limits
+
+4. **Statistics for Different Budgets**:
+   - Fee calculations
+   - Minimum/maximum trade amounts
+   - Expected profit calculations
+   - Multiple budget scenarios (100, 500, 1000 USDT, etc.)
 
 ## Configuration
 
